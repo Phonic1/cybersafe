@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nepean Cyber Safe Survey (Primary)</title>
+    
+    <!-- Firebase Libraries (Compat version) -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700&display=swap');
+        body { font-family: "Nunito", Verdana, sans-serif; background-color: #f6f6f7; color: #1d1d1f; margin: 0; padding: 2rem; display: flex; justify-content: center; }
+        .main-container { max-width: 800px; width: 100%; }
+        .survey-container, .dashboard-container { width: 100%; background-color: #ffffff; border-radius: 20px; padding: 2.5rem; box-shadow: 0 4px 20px rgba(0,0,0,0.08); box-sizing: border-box; }
+        h1 { font-size: 2.5rem; font-weight: 700; text-align: center; margin-bottom: 2rem; color: #000; }
+        h2 { font-size: 1.5rem; font-weight: 700; margin: 0; }
+        .question { margin-bottom: 2.5rem; border-top: 1px solid #e5e5e5; padding-top: 2rem; }
+        .question:first-of-type { border-top: none; padding-top: 0; }
+        .question-header { display: flex; align-items: center; margin-bottom: 1rem; }
+        .question-number { font-size: 1.5rem; font-weight: 700; margin-right: 1rem; color: #8a8a8e; }
+        .description { font-size: 0.9rem; color: #6e6e73; margin-bottom: 1.5rem; line-height: 1.4; }
+        .prompt { font-size: 1.1rem; font-weight: 600; margin-bottom: 1.5rem; }
+        .checkbox-group { display: flex; flex-wrap: wrap; gap: 1rem; }
+        .checkbox-group label { display: flex; align-items: center; cursor: pointer; }
+        .checkbox-group input[type="radio"] { display: none; }
+        .checkbox-group span { padding: 0.75rem 1.25rem; border-radius: 12px; border: 1px solid #d2d2d7; transition: background-color 0.2s ease, border-color 0.2s ease; user-select: none; font-weight: 500;}
+        .checkbox-group label:hover span { background-color: #f5f5f7; }
+        .checkbox-group input[type="radio"]:checked + span { background-color: #007aff; color: white; border-color: #007aff; }
+        .likert-container { padding: 0 0.5rem; }
+        .likert-scale { display: flex; align-items: center; gap: 1rem; margin-top: 1.5rem; }
+        .likert-scale input[type="range"] { -webkit-appearance: none; width: 100%; height: 8px; background: #e5e5e5; border-radius: 5px; outline: none; }
+        .likert-scale input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 24px; height: 24px; background: #007aff; cursor: pointer; border-radius: 50%; border: 4px solid #fff; box-shadow: 0 0 5px rgba(0,0,0,0.2); }
+        .likert-labels { display: flex; justify-content: space-between; font-size: 0.9rem; color: #6e6e73; margin-top: 0.75rem; padding: 0 0.2rem; }
+        .likert-labels span { width: 40px; text-align: center; }
+        .likert-description { display: flex; justify-content: space-between; font-size: 0.8rem; color: #6e6e73; margin-top: -0.25rem; }
+        .open-text { width: 100%; padding: 1rem; border: 1px solid #d2d2d7; border-radius: 12px; font-size: 1rem; margin-top: 1rem; box-sizing: border-box; resize: vertical; font-family: "Nunito", Verdana, sans-serif; }
+        .platform-item { display: grid; grid-template-columns: 1fr auto; align-items: center; padding: 1rem 0; border-bottom: 1px solid #f0f0f0; }
+        .platform-item:last-child { border-bottom: none; }
+        .platform-details .name { font-weight: 500; color: #1d1d1f; }
+        .switch { position: relative; display: inline-block; width: 51px; height: 31px; margin-left: 1rem; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 34px; }
+        .slider:before { position: absolute; content: ""; height: 23px; width: 23px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: #34c759; }
+        input:checked + .slider:before { transform: translateX(20px); }
+        .button-container { text-align: center; margin-top: 3rem; border-top: 1px solid #e5e5e5; padding-top: 2.5rem; }
+        .admin-button-container { text-align: center; margin-top: 1.5rem; }
+        .button { font-size: 1.1rem; font-weight: 600; padding: 1rem 2.5rem; border: none; border-radius: 12px; cursor: pointer; transition: background-color 0.2s ease, transform 0.1s ease; font-family: "Nunito", Verdana, sans-serif; }
+        .submit-button { background-color: #34c759; color: white; }
+        .submit-button:hover { background-color: #28a745; }
+        .admin-button { background-color: #5856d6; color: white; }
+        .admin-button:hover { background-color: #4442a8; }
+        .button:active { transform: scale(0.98); }
+
+        /* Dashboard Styles */
+        .dashboard-container { margin-top: 2rem; border-top: 4px solid #5856d6; display: none; }
+        .dashboard-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; border-bottom: 1px solid #e5e5e5; padding-bottom: 1rem;}
+        .dashboard-header h2 { font-size: 2rem; }
+        .dashboard-controls select { font-family: "Nunito", sans-serif; font-size: 1rem; padding: 0.5rem; border-radius: 8px; border: 1px solid #d2d2d7; }
+        .dashboard-content .analysis-item { margin-bottom: 2rem; }
+        .dashboard-content h3 { font-size: 1.2rem; font-weight: 700; margin-bottom: 1rem; border-bottom: 1px solid #f0f0f0; padding-bottom: 0.5rem; }
+        .dashboard-content .item-prompt { font-size: 0.9rem; color: #6e6e73; margin-bottom: 0.75rem; font-style: italic; }
+        .dashboard-content .item-scale { font-size: 0.8rem; color: #8a8a8e; margin-top: 0.5rem; }
+        .bar-chart-container { font-size: 0.9rem; }
+        .bar-row { display: flex; align-items: center; margin-bottom: 0.5rem; }
+        .bar-label { width: 120px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 500;}
+        .bar { height: 20px; background-color: #007aff; color: white; display: flex; align-items: center; justify-content: flex-start; padding-left: 5px; font-size: 0.8rem; border-radius: 4px; font-weight: 600;}
+        .comment-list { list-style: none; padding-left: 0; max-height: 200px; overflow-y: auto; }
+        .comment-list li { background-color: #f5f5f7; padding: 0.75rem; border-radius: 8px; margin-bottom: 0.5rem; text-align: left;}
+        .reset-button { background-color: #dc3545; color: white; padding: 0.5rem 1rem !important; }
+    </style>
+</head>
+<body>
+
+<div class="main-container">
+    <div class="survey-container">
+        <h1>Nepean Cyber Safe Survey (Primary)</h1>
+        <form id="survey-form">
+            <div class="question"> <h2 class="prompt" style="text-align:center; font-weight: 700;">Please select your class level</h2> <div class="checkbox-group" style="justify-content: center;"> <label><input type="radio" name="class_level" value="Primary 1"><span>Primary 1</span></label> <label><input type="radio" name="class_level" value="Primary 2"><span>Primary 2</span></label> <label><input type="radio" name="class_level" value="Primary 3"><span>Primary 3</span></label> <label><input type="radio" name="class_level" value="Primary 4"><span>Primary 4</span></label> <label><input type="radio" name="class_level" value="Primary 5"><span>Primary 5</span></label> <label><input type="radio" name="class_level" value="Primary 6"><span>Primary 6</span></label> <label><input type="radio" name="class_level" value="Primary 7"><span>Primary 7</span></label> <label><input type="radio" name="class_level" value="Primary 8"><span>Primary 8</span></label> </div> </div>
+            <div class="question"><div class="question-header"><span class="question-number">1.</span><h2>Seeing Scary or Upsetting Things Online (Content)</h2></div><p class="description">Some students might accidentally see violent, scary, or age-inappropriate videos or ads while watching YouTube, playing games, or using apps.</p><p class="prompt">Have you observed or heard of students becoming upset, scared, or confused by something they saw online?</p><div class="checkbox-group"><label><input type="radio" name="q1_yesno" value="Yes"><span>Yes</span></label><label><input type="radio" name="q1_yesno" value="No"><span>No</span></label></div><textarea id="q1_text" class="open-text" placeholder="Optional: Please describe what happened."></textarea></div>
+            <div class="question"><div class="question-header"><span class="question-number">2.</span><h2>Believing Everything They See Online (Content)</h2></div><p class="description">Students often believe that all information or images online are real or true. This includes edited photos, AI-generated content, or fake stories.</p><p class="prompt">Do you think your students can tell the difference between real and fake information, or recognise edited/AI-generated images?</p><div class="likert-container"><div class="likert-scale"><input id="q2_likert" type="range" min="1" max="5" value="3"></div><div class="likert-labels"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span></div><div class="likert-description"><span>Not at all</span><span>Very confident</span></div></div></div>
+            <div class="question"><div class="question-header"><span class="question-number">3.</span><h2>Sharing Personal Information (Contact & Conduct)</h2></div><p class="description">Many students don’t realise that sharing their full name, school, location, photos in uniform, or other personal details online can be risky.</p><p class="prompt">Do you believe your students understand what personal information should or shouldn’t be shared online?</p><div class="likert-container"><div class="likert-scale"><input id="q3_likert" type="range" min="1" max="5" value="3"></div><div class="likert-labels"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span></div><div class="likert-description"><span>Not at all</span><span>Very well</span></div></div><textarea id="q3_text" class="open-text" placeholder="What examples of oversharing have you encountered?"></textarea></div>
+            <div class="question"><div class="question-header"><span class="question-number">4.</span><h2>Chatting with Strangers in Games or Apps (Contact)</h2></div><p class="description">Some online games and platforms allow open chat where strangers can message children. Students may not know who they’re really talking to.</p><p class="prompt">Have you had any concerns about students chatting with unknown people online (e.g., in Roblox, Minecraft, or gaming apps)?</p><div class="checkbox-group"><label><input type="radio" name="q4_choice" value="Yes, occasionally"><span>Yes, occasionally</span></label><label><input type="radio" name="q4_choice" value="Yes, often"><span>Yes, often</span></label><label><input type="radio" name="q4_choice" value="No"><span>No</span></label><label><input type="radio" name="q4_choice" value="Unsure"><span>Unsure</span></label></div></div>
+            <div class="question"><div class="question-header"><span class="question-number">5.</span><h2>Being Unkind or Experiencing Unkindness Online (Conduct)</h2></div><p class="description">Students may send or receive mean messages, be excluded from online chats, or feel hurt by things said in group messages or games.</p><p class="prompt">Have you heard students talk about feeling upset due to things said or done in online chats or messages?</p><div class="checkbox-group"><label><input type="radio" name="q5_yesno" value="Yes"><span>Yes</span></label><label><input type="radio" name="q5_yesno" value="No"><span>No</span></label></div><textarea id="q5_text" class="open-text" placeholder="Optional: What happened?"></textarea></div>
+            <div class="question"><div class="question-header"><span class="question-number">6.</span><h2>Not Asking Before Posting or Sending Pictures (Conduct)</h2></div><p class="description">Students might take or share photos/videos of others without permission, not understanding privacy and consent.</p><p class="prompt">Have students in your class shared images of others without asking permission?</p><div class="checkbox-group"><label><input type="radio" name="q6_shared" value="Yes"><span>Yes</span></label><label><input type="radio" name="q6_shared" value="No"><span>No</span></label></div><p class="prompt" style="margin-top: 2rem;">How aware are students of consent when sharing?</p><div class="likert-container"><div class="likert-scale"><input id="q6_likert" type="range" min="1" max="5" value="3"></div><div class="likert-labels"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span></div><div class="likert-description"><span>Not at all aware</span><span>Very aware</span></div></div></div>
+            <div class="question"><div class="question-header"><span class="question-number">7.</span><h2>Being Online Too Much / Emotional Impact (Compulsion)</h2></div><p class="description">Some students struggle to regulate screen time, may act out when asked to stop, or show signs of tiredness, frustration, or irritability due to online use.</p><p class="prompt">Have you noticed students showing signs of screen overuse (e.g., tiredness, irritability, difficulty focusing)?</p><div class="likert-container"><div class="likert-scale"><input id="q7_likert" type="range" min="1" max="5" value="3"></div><div class="likert-labels"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span></div><div class="likert-description"><span>Never</span><span>Very often</span></div></div><textarea id="q7_text" class="open-text" placeholder="Optional: Please provide any specific observations."></textarea></div>
+            <div class="question"><div class="question-header"><span class="question-number">8.</span><h2>Copying Unsafe Trends or Challenges (Content/Conduct)</h2></div><p class="description">Students may imitate viral content or online challenges they see, not understanding the risks involved (e.g., “challenges” that involve dares).</p><p class="prompt">Have your students ever talked about or mimicked unsafe online trends or dares?</p><div class="checkbox-group"><label><input type="radio" name="q8_yesno" value="Yes"><span>Yes</span></label><label><input type="radio" name="q8_yesno" value="No"><span>No</span></label></div><textarea id="q8_text" class="open-text" placeholder="If yes, please describe the trend or challenge."></textarea></div>
+            <div class="question"><div class="question-header"><span class="question-number">9.</span><h2>Thinking Online Friends Are Always Safe (Contact)</h2></div><p class="description">Students might assume that anyone friendly online is safe, even if they haven’t met them in person.</p><p class="prompt">How well do your students understand the risks of trusting people online who they haven't met in real life?</p><div class="likert-container"><div class="likert-scale"><input id="q9_likert" type="range" min="1" max="5" value="3"></div><div class="likert-labels"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span></div><div class="likert-description"><span>Not at all</span><span>Very well</span></div></div></div>
+            <div class="question"><div class="question-header"><span class="question-number">10.</span><h2>Using Fake Profiles or Pretending to Be Someone Else (Conduct)</h2></div><p class="description">Some students may use fake names or pretend to be someone else online, often thinking it’s funny or harmless.</p><p class="prompt">Have you encountered any situations where students created fake accounts or impersonated others online?</p><div class="checkbox-group"><label><input type="radio" name="q10_yesno" value="Yes"><span>Yes</span></label><label><input type="radio" name="q10_yesno" value="No"><span>No</span></label></div><textarea id="q10_text" class="open-text" placeholder="Please provide any comments or details."></textarea></div>
+            <div class="question"><div class="question-header"><span class="question-number">11.</span><h2>Platform & App Usage</h2></div><p class="prompt">Please enable the slider for each app or platform you believe your students currently engage with.</p><div id="platform-list"></div></div>
+            
+            <div class="button-container">
+                <button type="button" class="button submit-button" onclick="submitSurvey()">Submit</button>
+            </div>
+        </form>
+    </div>
+
+    <div class="admin-button-container">
+        <button class="button admin-button" onclick="openAdminDashboard()">Admin</button>
+    </div>
+
+    <!-- Admin Dashboard -->
+    <div id="dashboard-container" class="dashboard-container">
+        <div class="dashboard-header">
+            <h2>Admin Dashboard</h2>
+            <div class="dashboard-controls">
+                <select id="class-filter" onchange="renderDashboardContent(this.value)">
+                    <!-- Options will be populated by JS -->
+                </select>
+                <button class="button" onclick="closeAdminDashboard()" style="padding: 0.5rem 1rem; margin-left: 1rem;">Close</button>
+            </div>
+        </div>
+        <div id="dashboard-content" style="max-height: 70vh; overflow-y: auto;">
+            <!-- Content will be rendered by JS -->
+        </div>
+        <div style="text-align: center; margin-top: 2rem; border-top: 1px solid #e5e5e5; padding-top: 1.5rem;">
+             <button class="button reset-button" onclick="promptForReset()">Master Reset Database</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // --- Your web app's Firebase configuration ---
+    const firebaseConfig = {
+      apiKey: "AIzaSyDCE0AG6vWuCIxKkn5IzpZ5jE7UUxxBCIQ",
+      authDomain: "cybersafe-51a9d.firebaseapp.com",
+      projectId: "cybersafe-51a9d",
+      storageBucket: "cybersafe-51a9d.appspot.com",
+      messagingSenderId: "822613929127",
+      appId: "1:822613929127:web:4c7a076019a529fa87bf82",
+      measurementId: "G-FNSVL6F9JV"
+    };
+
+    // Initialize Firebase and Firestore
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    const dashboardContainer = document.getElementById('dashboard-container');
+    let allResponses = []; // Cache for all survey responses
+
+    const platformData = [ { id: 'youtube', name: 'YouTube / YouTube Kids' }, { id: 'tiktok', name: 'TikTok' }, { id: 'roblox', name: 'Roblox' }, { id: 'minecraft', name: 'Minecraft (online)' }, { id: 'fortnite', name: 'Fortnite' }, { id: 'snapchat', name: 'Snapchat' }, { id: 'instagram', name: 'Instagram' }, { id: 'messenger', name: 'Messenger / Messenger Kids' }, { id: 'discord', name: 'Kik / Discord' }, { id: 'omegle', name: 'Omegle / Chatroulette' }, { id: 'whatsapp', name: 'WhatsApp' }, { id: 'google', name: 'Google / Search Engines' }, { id: 'streaming', name: 'Streaming (Netflix, etc.)' }, { id: 'consoles', name: 'Consoles (PlayStation, Xbox)' }, { id: 'qna', name: 'Anonymous Q&A apps' }, { id: 'pinterest', name: 'Pinterest / Reddit' }, { id: 'browsergames', name: 'Browser Games' } ];
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const platformListContainer = document.getElementById('platform-list');
+        platformData.forEach(p => { const item = document.createElement('div'); item.className = 'platform-item'; item.innerHTML = `<div class="platform-details"><div class="name">${p.name}</div></div><label class="switch"><input type="checkbox" id="platform-${p.id}"><span class="slider"></span></label>`; platformListContainer.appendChild(item); });
+    });
+
+    function getSurveyDataAsObject() {
+        const engagedPlatforms = platformData.filter(p => document.getElementById(`platform-${p.id}`).checked).map(p => p.id);
+        return { class_level: document.querySelector('input[name="class_level"]:checked')?.value || null, q1_yesno: document.querySelector('input[name="q1_yesno"]:checked')?.value || null, q1_text: document.getElementById('q1_text').value, q2_likert: parseInt(document.getElementById('q2_likert').value), q3_likert: parseInt(document.getElementById('q3_likert').value), q3_text: document.getElementById('q3_text').value, q4_choice: document.querySelector('input[name="q4_choice"]:checked')?.value || null, q5_yesno: document.querySelector('input[name="q5_yesno"]:checked')?.value || null, q5_text: document.getElementById('q5_text').value, q6_shared: document.querySelector('input[name="q6_shared"]:checked')?.value || null, q6_likert: parseInt(document.getElementById('q6_likert').value), q7_likert: parseInt(document.getElementById('q7_likert').value), q7_text: document.getElementById('q7_text').value, q8_yesno: document.querySelector('input[name="q8_yesno"]:checked')?.value || null, q8_text: document.getElementById('q8_text').value, q9_likert: parseInt(document.getElementById('q9_likert').value), q10_yesno: document.querySelector('input[name="q10_yesno"]:checked')?.value || null, q10_text: document.getElementById('q10_text').value, platforms: engagedPlatforms, submittedAt: firebase.firestore.FieldValue.serverTimestamp() };
+    }
+
+    async function submitSurvey() {
+        const data = getSurveyDataAsObject();
+        if (!data.class_level) { alert("Please select your class level before submitting."); return; }
+        try { await db.collection("surveyResponses").add(data); alert("Success! Your survey response has been submitted."); document.getElementById("survey-form").reset(); }
+        catch (error) { console.error("Error adding document: ", error); alert("Error: Could not submit survey. Please check the console for details."); }
+    }
+    
+    // --- Admin Dashboard Functions ---
+    async function openAdminDashboard() {
+        const password = prompt("Please enter the admin password:");
+        if (password !== "cybersafe123") { if (password !== null) alert("Incorrect password."); return; }
+
+        alert("Loading dashboard data...");
+        try {
+            const snapshot = await db.collection("surveyResponses").orderBy("submittedAt", "desc").get();
+            allResponses = snapshot.docs.map(doc => doc.data());
+        } catch (error) {
+            alert("Could not fetch data. Check Firebase configuration.");
+            return;
+        }
+
+        if (allResponses.length === 0) {
+            alert("No survey responses have been submitted yet.");
+            return;
+        }
+
+        const classFilter = document.getElementById('class-filter');
+        const activeClasses = [...new Set(allResponses.map(res => res.class_level).filter(Boolean))];
+        activeClasses.sort((a, b) => a.localeCompare(b, undefined, {numeric: true}));
+        
+        classFilter.innerHTML = '<option value="">-- Select a Class --</option>';
+        activeClasses.forEach(className => {
+            const option = document.createElement('option');
+            option.value = className;
+            option.textContent = className;
+            classFilter.appendChild(option);
+        });
+        
+        dashboardContainer.style.display = 'block';
+        document.getElementById('dashboard-content').innerHTML = '<p style="text-align:center; color: #6e6e73;">Please select a class from the dropdown to view responses.</p>';
+    }
+
+    function closeAdminDashboard() {
+        dashboardContainer.style.display = 'none';
+    }
+
+    function promptForReset() {
+        const resetPassword = prompt("This is a destructive action. To confirm, please enter the master reset password:");
+        if (resetPassword === "cybersafe123!") {
+            resetDatabase();
+        } else if (resetPassword !== null) {
+            alert("Incorrect reset password. Action cancelled.");
+        }
+    }
+
+    async function resetDatabase() {
+        const confirmation = confirm("FINAL WARNING: This will permanently delete ALL survey responses from the database. Are you absolutely sure?");
+        if (!confirmation) {
+            alert("Database reset cancelled.");
+            return;
+        }
+        alert("Deleting all entries... Please wait.");
+        try {
+            const snapshot = await db.collection("surveyResponses").get();
+            if (snapshot.empty) {
+                alert("Database is already empty.");
+                return;
+            }
+            const batch = db.batch();
+            snapshot.docs.forEach(doc => batch.delete(doc.ref));
+            await batch.commit();
+            alert(`Success! ${snapshot.size} responses have been deleted.`);
+            // RELOAD dashboard to show it's empty
+            closeAdminDashboard();
+        } catch (error) {
+            console.error("Error deleting documents: ", error);
+            alert("An error occurred while trying to reset the database. Check the console.");
+        }
+    }
+
+    function renderDashboardContent(filterClass) {
+        if (!filterClass) {
+            document.getElementById('dashboard-content').innerHTML = '<p style="text-align:center; color: #6e6e73;">Please select a class from the dropdown to view responses.</p>';
+            return;
+        }
+
+        const responses = allResponses.filter(res => res.class_level === filterClass);
+        const total = responses.length;
+        let contentHTML = `<div style="text-align:center; padding-bottom: 1rem;"><h3>Showing ${total} response(s) for ${filterClass}</h3></div>`;
+
+        const questionMap = [
+            { key: 'q1_yesno', title: '1. Seen Scary Content', type: 'bar' },
+            { key: 'q2_likert', title: '2. Believing Fakes', type: 'avg', prompt: 'Do you think your students can tell the difference between real and fake information, or recognise edited/AI-generated images?', scale: ['Not at all', 'Very confident'] },
+            { key: 'q3_likert', title: '3. Sharing Info Safely', type: 'avg', prompt: 'Do you believe your students understand what personal information should or shouldn’t be shared online?', scale: ['Not at all', 'Very well'] },
+            { key: 'q4_choice', title: '4. Chatting with Strangers', type: 'bar' },
+            { key: 'q5_yesno', title: '5. Experienced Unkindness', type: 'bar' },
+            { key: 'q6_shared', title: '6a. Shared w/o Permission', type: 'bar' },
+            { key: 'q6_likert', title: '6b. Awareness of Consent', type: 'avg', prompt: 'How aware are students of consent when sharing?', scale: ['Not at all aware', 'Very aware'] },
+            { key: 'q7_likert', title: '7. Screen Overuse', type: 'avg', prompt: 'Have you noticed students showing signs of screen overuse (e.g., tiredness, irritability, difficulty focusing)?', scale: ['Never', 'Very often'] },
+            { key: 'q8_yesno', title: '8. Copied Unsafe Trends', type: 'bar' },
+            { key: 'q9_likert', title: '9. Trusting Strangers', type: 'avg', prompt: 'How well do your students understand the risks of trusting people online who they haven\'t met in real life?', scale: ['Not at all', 'Very well'] },
+            { key: 'q10_yesno', title: '10. Used Fake Profiles', type: 'bar' },
+            { key: 'platforms', title: '11. Platforms Used', type: 'bar' },
+        ];
+
+        questionMap.forEach(q => {
+            contentHTML += `<div class="analysis-item"><h3>${q.title}</h3>`;
+            if (q.prompt) {
+                contentHTML += `<p class="item-prompt">${q.prompt}</p>`;
+            }
+
+            const counts = responses.reduce((acc, res) => {
+                const value = res[q.key];
+                if (Array.isArray(value)) { value.forEach(p => { acc[p] = (acc[p] || 0) + 1; });
+                } else if (value) { acc[value] = (acc[value] || 0) + 1; }
+                return acc;
+            }, {});
+
+            if (q.type === 'bar') {
+                contentHTML += '<div class="bar-chart-container">';
+                Object.entries(counts).forEach(([label, count]) => {
+                    const percent = (count / total) * 100;
+                    const platformName = platformData.find(p => p.id === label)?.name || label;
+                    contentHTML += `<div class="bar-row"><div class="bar-label" title="${platformName}">${platformName}</div><div class="bar" style="width: ${percent}%;">${count} (${percent.toFixed(0)}%)</div></div>`;
+                });
+                if (Object.keys(counts).length === 0) contentHTML += '<p>No data recorded for this question.</p>';
+                contentHTML += '</div>';
+            } else if (q.type === 'avg') {
+                const sum = responses.reduce((acc, res) => acc + (res[q.key] || 0), 0);
+                contentHTML += `<p>Average Rating: <strong>${(sum/total || 0).toFixed(2)} / 5</strong></p>`;
+                if (q.scale) {
+                    contentHTML += `<p class="item-scale"><em>Scale: 1 (${q.scale[0]}) to 5 (${q.scale[1]})</em></p>`;
+                }
+            }
+            contentHTML += `</div>`;
+        });
+        
+        contentHTML += `<div class="analysis-item"><h3>Verbatim Comments</h3>`;
+        const commentKeys = { 'q1_text': 'Q1', 'q3_text': 'Q3', 'q5_text': 'Q5', 'q7_text': 'Q7', 'q8_text': 'Q8', 'q10_text': 'Q10'};
+        contentHTML += '<ul class="comment-list">';
+        let hasComments = false;
+        responses.forEach(res => {
+            Object.entries(commentKeys).forEach(([key, label]) => {
+                if (res[key] && res[key].trim()) {
+                    hasComments = true;
+                    contentHTML += `<li><strong>${label}:</strong> "${res[key]}"</li>`;
+                }
+            });
+        });
+        if (!hasComments) contentHTML += '<li>No comments submitted for this class.</li>';
+        contentHTML += '</ul></div>';
+        
+        document.getElementById('dashboard-content').innerHTML = contentHTML;
+    }
+
+</script>
+</body>
+</html>
