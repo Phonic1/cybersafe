@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nepean Cyber Safe Survey</title>
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700&display=swap');
+        body { font-family: "Nunito", Verdana, sans-serif; background-color: #f6f6f7; color: #1d1d1f; margin: 0; padding: 2rem; display: flex; justify-content: center; align-items: center; min-height: 100vh; box-sizing: border-box; }
+        .main-container { max-width: 800px; width: 100%; }
+        .survey-container { width: 100%; background-color: #ffffff; border-radius: 20px; padding: 3.5rem; box-shadow: 0 4px 20px rgba(0,0,0,0.08); box-sizing: border-box; }
+        h1 { font-size: 2.8rem; font-weight: 700; text-align: center; margin-bottom: 1rem; color: #000; }
+        
+        .intro-text {
+            text-align: center;
+            font-size: 1.2rem;
+            color: #6e6e73;
+            margin-bottom: 3.5rem;
+            line-height: 1.6;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .selection-container {
+            display: flex;
+            justify-content: center;
+            gap: 1.5rem;
+            margin-top: 2rem;
+            flex-wrap: wrap; /* Allows buttons to stack on smaller screens */
+            border-top: 1px solid #e5e5e5;
+            padding-top: 3rem;
+        }
+
+        .button { 
+            font-size: 1.2rem; 
+            font-weight: 600; 
+            padding: 1.2rem 3rem; 
+            border: none; 
+            border-radius: 12px; 
+            cursor: pointer; 
+            transition: background-color 0.2s ease, transform 0.1s ease; 
+            font-family: "Nunito", Verdana, sans-serif; 
+            text-decoration: none; /* Removes underline from links styled as buttons */
+            display: inline-block; /* Ensures padding and margins are applied correctly */
+        }
+
+        .selection-button {
+            background-color: #007aff;
+            color: white;
+        }
+
+        .selection-button:hover {
+            background-color: #005ecb; /* A slightly darker blue for hover effect */
+        }
+        
+        .button:active { 
+            transform: scale(0.98); 
+        }
+
+    </style>
+</head>
+<body>
+
+<div class="main-container">
+    <div class="survey-container">
+        <h1>Nepean Cyber Safe Survey</h1>
+        <p class="intro-text">
+            Welcome, teachers. Please select your relevant school department to begin the survey.
+        </p>
+        
+        <div class="selection-container">
+            <a href="./Primary2.html" class="button selection-button">Primary</a>
+            <a href="./secondary & middles.html" class="button selection-button">Middles</a>
+            <a href="./secondary & middles.html" class="button selection-button">Secondary</a>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>
